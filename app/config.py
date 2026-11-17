@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 APP_NAME = "Musical Display of Power"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 REPO_URL = "https://github.com/carvalhopecanha/musical-display-of-power"
 
 _sep = ";" if os.name == "nt" else ":"

@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Versions follow [Semant
 
 *Português: as mudanças de cada versão, em inglês.*
 
+## [1.1.0] - 2026-11-17
+
+Desktop app. The same code now also runs as a program on your computer, without Docker. The server version works exactly as before.
+
+### Added
+- **Desktop app for Windows, macOS and Linux:** MDoP opens in its own window (WebView2 on Windows, WebKit on macOS, Qt WebEngine on Linux), with its server running only on this computer (`127.0.0.1`, on a free port).
+- **Installers built by GitHub Actions:** `MDoP-Setup-<version>.exe` for Windows (per-user install with a Start menu shortcut), `MDoP-<version>.dmg` for macOS on Apple Silicon and `MDoP-<version>.AppImage` for Linux, attached to each GitHub Release. The `desktop` workflow can also run by hand to make test installers without publishing anything.
+- **First start asks where to keep the library** (default: an `MDoP` folder in your Music folder). An existing library, copied from the server, works as is.
+- **Folders picked in Settings** with the system's folder dialog: import folders (*Settings → Library*) and sound-effect folders (*Settings → Sound effects*), plus *Use another folder…* for the library. Paths with accents and spaces work, also on Windows.
+- **Open with the default program** (desktop only): a button on each file, or a double-click, opens a copy of the file in the program your system uses for it.
+- **Save as new version** (desktop only): when that copy is saved in the other program, MDoP offers to keep it as a new version of the song. The original is never written over. Edits still pending when MDoP closes go to the File list.
+- `MDoP disable-password` and `MDoP self-test` commands for the desktop program.
+
+### Changed
+- M4A and AAC files only show a play button where the AAC codec is really available; elsewhere they are offered for download (and, on the desktop, to open in another program) instead of failing to play.
+- Texts that mention "the server" have desktop wording in the desktop app.
+
+### Notes
+- The installers are not signed with a paid certificate: Windows SmartScreen and macOS Gatekeeper show a warning the first time. The README explains how to continue.
+- In the Linux AppImage, the built-in player cannot play M4A/AAC (the bundled Qt WebEngine has no AAC codec).
+
 ## [1.0.0] - 2026-11-16
 
 First public release.
