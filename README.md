@@ -49,11 +49,13 @@ Install it **on your computer** (Windows, macOS or Linux) and it opens in its ow
 
 Download the file for your system from the **[latest release](https://github.com/carvalhopecanha/musical-display-of-power/releases/latest)**:
 
-| System | File |
+| System | Download (version 1.1.0) |
 |---|---|
-| Windows 10 and 11 (64-bit) | `MDoP-Setup-<version>.exe` |
-| macOS 11 or newer on Apple Silicon (M1 and later) | `MDoP-<version>.dmg` |
-| Linux (64-bit) | `MDoP-<version>.AppImage` |
+| Windows 10 and 11 (64-bit) | [MDoP-Setup-1.1.0.exe](https://github.com/carvalhopecanha/musical-display-of-power/releases/download/v1.1.0/MDoP-Setup-1.1.0.exe) |
+| macOS 11 or newer on Apple Silicon (M1 and later) | [MDoP-1.1.0.dmg](https://github.com/carvalhopecanha/musical-display-of-power/releases/download/v1.1.0/MDoP-1.1.0.dmg) |
+| Linux (64-bit) | [MDoP-1.1.0.AppImage](https://github.com/carvalhopecanha/musical-display-of-power/releases/download/v1.1.0/MDoP-1.1.0.AppImage) |
+
+Newer versions, when there are any, are always on the [latest release](https://github.com/carvalhopecanha/musical-display-of-power/releases/latest) page.
 
 MDoP is not signed with a paid certificate, so the system warns you the first time:
 
