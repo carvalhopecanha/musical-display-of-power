@@ -3,7 +3,8 @@ import os
 import tempfile
 from pathlib import Path
 
-_TMP = Path(tempfile.mkdtemp(prefix="mdop-test-"))
+# resolved, as MDoP resolves paths: macOS /var -> /private/var, Windows short names (RUNNER~1) -> long names
+_TMP = Path(tempfile.mkdtemp(prefix="mdop-test-")).resolve()
 for name in ("import", "sfx", "backups"):
     (_TMP / name).mkdir()
 os.environ["MDOP_LIBRARY"] = str(_TMP / "library")
