@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=MDoP
+GenericName=Music library
+GenericName[pt_BR]=Biblioteca musical
+Comment=Organize your songs, ideas, versions, tabs and MIDI
+Comment[pt_BR]=Organize suas músicas, ideias, versões, tablaturas e MIDI
+Exec=MDoP
+Icon=mdop
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=music;songs;tabs;guitar pro;midi;library;
+StartupWMClass=MDoP

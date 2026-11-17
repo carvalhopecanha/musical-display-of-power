@@ -22,3 +22,11 @@ mdop-biblioteca/
 .DS_Store
 ._*
 Thumbs.db
+
+# Desktop builds (PyInstaller, installers)
+/build/
+/dist/
+/out/
+*.AppImage
+*.dmg
+MDoP-Setup-*.exe

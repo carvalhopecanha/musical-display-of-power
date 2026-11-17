@@ -1,0 +1,5 @@
+#!/bin/sh
+# Start MDoP from inside the AppImage. The window uses the Qt WebEngine that travels with it.
+HERE="$(dirname "$(readlink -f "$0")")"
+export MDOP_GUI="${MDOP_GUI:-qt}"
+exec "$HERE/usr/lib/mdop/MDoP" "$@"

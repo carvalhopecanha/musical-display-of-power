@@ -1,0 +1,15 @@
+# Desktop app (python -m app.desktop) and its installers. The server (Docker) does not need these.
+#   pip install -r requirements.txt -r requirements-desktop.txt
+platformdirs==4.13.5
+pywebview==6.2.1          # on Windows it also installs pythonnet (WebView2); on macOS, pyobjc (WebKit)
+
+# Linux window: Qt WebEngine, bundled inside the AppImage
+# (running from source, pywebview can also use the system's GTK/WebKitGTK instead)
+qtpy==2.4.3; sys_platform == "linux"
+PyQt6==6.11.0; sys_platform == "linux"
+PyQt6-Qt6==6.11.2; sys_platform == "linux"
+PyQt6-WebEngine==6.11.0; sys_platform == "linux"
+PyQt6-WebEngine-Qt6==6.11.2; sys_platform == "linux"
+
+# building the installers
+pyinstaller==6.22.3
