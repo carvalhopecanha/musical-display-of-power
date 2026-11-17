@@ -2,7 +2,7 @@
 
 [English](guide.md) · **Português**
 
-Este guia percorre o MDoP da primeira importação ao backup. Se ainda não instalou, comece pelo [README](../README.pt-BR.md#instalação-rápida-docker).
+Este guia percorre o MDoP da primeira importação ao backup. Se ainda não instalou, comece pelo README: o [programa para computador](../README.pt-BR.md#programa-para-computador-windows-macos-linux) ou o [Docker](../README.pt-BR.md#instalação-rápida-docker) para um servidor de casa.
 
 - [1. A ideia em um minuto](#1-a-ideia-em-um-minuto)
 - [2. Adicionando seus arquivos](#2-adicionando-seus-arquivos)
@@ -20,6 +20,7 @@ Este guia percorre o MDoP da primeira importação ao backup. Se ainda não inst
 - [14. Configurações](#14-configurações)
 - [15. Backup, atualizações e mudar a biblioteca de lugar](#15-backup-atualizações-e-mudar-a-biblioteca-de-lugar)
 - [16. Problemas comuns](#16-problemas-comuns)
+- [17. O programa para computador](#17-o-programa-para-computador)
 
 ## 1. A ideia em um minuto
 
@@ -45,7 +46,7 @@ Clique em **Adicionar arquivos** (no alto, à direita, na maioria das telas). Vo
 
 **De onde**
 - **Do meu computador:** escolha arquivos ou uma pasta inteira, ou arraste para a janela.
-- **Do servidor:** navegue pela pasta de importação escolhida na instalação e marque arquivos ou pastas inteiras. É o jeito mais rápido de trazer centenas de arquivos.
+- **Do servidor:** navegue pela pasta de importação escolhida na instalação e marque arquivos ou pastas inteiras. É o jeito mais rápido de trazer centenas de arquivos. No programa para computador essa aba se chama **Pastas de importação** e mostra as pastas que você adicionou em *Configurações → Biblioteca*.
 
 **Para onde**
 - **Lista de arquivos** *(recomendado)*: os arquivos entram soltos para você ouvir e decidir depois. Ideal para muitos arquivos.
@@ -262,7 +263,7 @@ As configurações são divididas em abas, e cada aba tem endereço próprio (po
 - **Segurança:** criar usuário e senha (opcional), trocar a senha, sair ou remover a proteção. Depois de 5 senhas erradas, aquele aparelho espera 5 minutos para tentar de novo.
 - **Sobre:** versão e página do projeto.
 
-As configurações ficam no servidor e valem para todo computador e celular. Os modos de exibição e o volume da tablatura e do MIDI ficam guardados em cada navegador.
+As configurações ficam no servidor e valem para todo computador e celular. Os modos de exibição e o volume da tablatura e do MIDI ficam guardados em cada navegador. O programa para computador tem algumas opções a mais; veja [O programa para computador](#17-o-programa-para-computador).
 
 ## 15. Backup, atualizações e mudar a biblioteca de lugar
 
@@ -323,3 +324,37 @@ sudo docker exec mdop python -m app disable-password
 ```
 
 **Outra coisa?** Abra uma issue no GitHub contando o que você fez, o que esperava e o que aconteceu.
+
+## 17. O programa para computador
+
+No Windows, no macOS e no Linux, o MDoP também roda como programa no seu computador, numa janela própria e sem Docker. O download e a instalação estão no [README](../README.pt-BR.md#programa-para-computador-windows-macos-linux). Tudo neste guia funciona igual; esta seção mostra o que muda.
+
+**Primeira abertura.** O MDoP pergunta onde guardar a biblioteca. O padrão é uma pasta `MDoP` dentro da sua pasta Músicas. Você pode escolher uma pasta nova ou uma que já tenha uma biblioteca do MDoP (por exemplo, a pasta da biblioteca copiada do servidor). Para trocar depois, use **Configurações → Biblioteca → Usar outra pasta…**: o MDoP troca na próxima abertura. Nada é movido: copie a pasta da biblioteca para lá antes, se quiser levar tudo junto.
+
+**Suas pastas, escolhidas com o seletor do sistema.** Não há variáveis de ambiente para configurar:
+
+- **Configurações → Biblioteca → Pastas de importação:** adicione as pastas de onde você quer importar (um backup do celular, um HD de gravações antigas…). Elas aparecem em **Adicionar arquivos → Pastas de importação**. O MDoP só lê essas pastas, a não ser que você escolha mover os arquivos.
+- **Configurações → Efeitos sonoros → Adicionar pasta de efeitos:** escolha a pasta raiz da sua biblioteca de efeitos. Como no servidor, o MDoP só lê. Tirar uma pasta da lista só desvincula; os arquivos continuam onde estão.
+
+**Abrir com o programa padrão.** Cada arquivo de uma música ou ideia tem um botão ↗, e um duplo clique no arquivo faz o mesmo: ele abre no programa que o seu sistema usa para aquele tipo (Guitar Pro ou TuxGuitar para tablaturas, Reaper ou Audacity para áudio, um editor de MIDI…). O MDoP abre uma **cópia** guardada numa pasta de trabalho, nunca o arquivo de dentro da biblioteca.
+
+**Salvar como nova versão.** Quando você salva essa cópia no outro programa, aparece um aviso no canto da tela: *"solo.gp5" foi alterado em outro programa.*
+
+- **Salvar como nova versão** cria uma versão nova da música (você pode dar um nome) com o arquivo editado. O original continua na versão dele, intocado. Salvou de novo mais tarde? Dá para guardar como mais uma versão.
+- **Ignorar** descarta o aviso dessa alteração. Os próximos salvamentos aparecem de novo.
+- Se você fechar o MDoP com uma edição pendente, a cópia editada vai para a **Lista de arquivos**, então ela nunca se perde.
+
+**Backups.** Funcionam como no servidor. A pasta de backups é a `mdop-backups`, ao lado da pasta da biblioteca (por exemplo `Músicas/mdop-backups`). De vez em quando, copie um backup para outro HD.
+
+**Indo e voltando entre o servidor e o computador.** Uma biblioteca é só um conjunto de pastas, então a mesma biblioteca funciona nos dois: copie a pasta da biblioteca, ou crie um backup de um lado e restaure do outro (**Configurações → Backup → Enviar um backup**). Não abra a mesma pasta pelo Docker e pelo programa ao mesmo tempo.
+
+**Problemas comuns**
+
+- **O Windows diz "O Windows protegeu o computador".** O MDoP não é assinado com um certificado pago. Clique em **Mais informações → Executar assim mesmo**.
+- **O macOS diz que não consegue verificar o desenvolvedor.** Abra **Ajustes do Sistema → Privacidade e Segurança** e clique em **Abrir Mesmo Assim**.
+- **O AppImage não abre.** Torne o arquivo executável (`chmod +x`). Se falar em FUSE, instale o `libfuse2` (`libfuse2t64` no Ubuntu 24.04).
+- **Um arquivo M4A aparece como "só download" no Linux.** O player interno do AppImage não tem o codec AAC. Use o botão ↗ para abrir no seu player.
+- **"O MDoP já está aberto em outra janela".** Só um MDoP roda por vez, para duas janelas nunca gravarem na mesma biblioteca. Feche o outro antes.
+- **O celular e outros computadores não acessam o programa.** É de propósito: ele só escuta neste computador. Para compartilhar a biblioteca na rede, use a versão Docker.
+- **Esqueci a senha:** rode `MDoP disable-password` num terminal, com o caminho completo do programa. O comando exato de cada sistema está no [README](../README.pt-BR.md#programa-para-computador-windows-macos-linux).
+- **Deu algum erro:** o arquivo de log `mdop.log` fica em `%LOCALAPPDATA%\MDoP\Logs` (Windows), `~/Library/Logs/MDoP` (macOS) ou `~/.local/state/MDoP/log` (Linux). Anexe na issue.

@@ -4,7 +4,7 @@
 
 **A self-hosted library for your own music.** MDoP gathers the recordings scattered across your phone and computer (voice memos, takes, MIDI files, Guitar Pro tabs, lyrics, covers). Riffs and sketches become **ideas** you can work on, finished pieces become **songs**, and songs are grouped into **albums** and **bands**. Each song keeps all of its versions, so nothing gets overwritten.
 
-It runs on your home server with Docker and opens in any browser on your network, on a computer or on a phone.
+Install it **on your computer** (Windows, macOS or Linux) and it opens in its own window, or run it **on your home server** with Docker and open it in any browser on your network, on a computer or on a phone.
 
 ![Home](docs/images/en/home.png)
 
@@ -27,6 +27,7 @@ It runs on your home server with Docker and opens in any browser on your network
 - **Trash with restore.** Nothing is ever deleted right away, and you can put things back where they were. Optionally, empty it automatically after 30 or 90 days.
 - **Optional password** (with a pause after repeated wrong attempts), English or Portuguese interface (it follows your browser by default), **dark, light and Glass** themes, and five accent colors.
 - **Works offline.** Every library it uses is bundled; nothing is loaded from the internet.
+- **Desktop app.** On Windows, macOS and Linux, MDoP runs in its own window. Open any file in its own program (Guitar Pro, Reaper, your player…) with a button or a double-click; when you save it there, MDoP offers to keep the result as a **new version** of the song, and the original stays as it was.
 
 | File list | Ideas | Song |
 |---|---|---|
@@ -43,6 +44,38 @@ It runs on your home server with Docker and opens in any browser on your network
 | Artist | Light theme | Glass theme |
 |---|---|---|
 | ![Artist](docs/images/en/artist.png) | ![Light theme](docs/images/en/light-theme.png) | ![Glass theme](docs/images/en/glass-theme.png) |
+
+## Desktop app (Windows, macOS, Linux)
+
+Download the file for your system from the **[latest release](https://github.com/carvalhopecanha/musical-display-of-power/releases/latest)**:
+
+| System | File |
+|---|---|
+| Windows 10 and 11 (64-bit) | `MDoP-Setup-<version>.exe` |
+| macOS 11 or newer on Apple Silicon (M1 and later) | `MDoP-<version>.dmg` |
+| Linux (64-bit) | `MDoP-<version>.AppImage` |
+
+MDoP is not signed with a paid certificate, so the system warns you the first time:
+
+- **Windows:** run the installer. If *Windows protected your PC* (SmartScreen) shows up, click **More info → Run anyway**. MDoP installs for your user only (no administrator password) and adds a Start menu shortcut. It uses Microsoft Edge WebView2, which comes with Windows 10 and 11.
+- **macOS:** open the `.dmg` and drag MDoP to *Applications*. The first time, macOS says it cannot check the developer: open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** (on older macOS, right-click the app and choose **Open**). Intel Macs can run MDoP from source (see [Running without Docker](#running-without-docker)).
+- **Linux:** make the file executable and open it: `chmod +x MDoP-*.AppImage && ./MDoP-*.AppImage`. If it complains about FUSE, install `libfuse2` (on Ubuntu 24.04: `sudo apt install libfuse2t64`).
+
+On the first start MDoP asks where to keep the library (default: an `MDoP` folder inside your Music folder). It can be a new folder or a library you already have: copy the library folder from your server, or restore a backup in *Settings → Backup*. The same library works in Docker and in the desktop app, just not in both at the same time.
+
+**Only in the desktop app:**
+
+- **Open with the default program:** the ↗ button on each file, or a double-click on the file, opens it in the program your system uses for it. MDoP opens a **copy**, never the file inside the library.
+- **Save as new version:** when you save that copy in the other program, a notice offers to keep it as a new version of the song. If you close MDoP with an edit you have not handled, the edited copy goes to the File list instead of being lost.
+- **Folders in Settings:** in *Settings → Library* and *Settings → Sound effects* you pick import and effects folders with the system's folder dialog; there are no environment variables to set. *Use another folder…* switches the library on the next start.
+
+Good to know:
+
+- In the Linux AppImage, the built-in player cannot play **M4A/AAC** files (the bundled Qt WebEngine has no AAC codec); MP3, WAV, OGG, Opus and FLAC play normally. Use *Open with the default program* for M4A files. On Windows and macOS every format plays.
+- MDoP only listens on `127.0.0.1`: other devices on your network cannot reach the desktop app. For phones and other computers, use the Docker version.
+- Updating: download the new version and install it over the old one (Windows, macOS) or replace the AppImage. Uninstalling removes the program, never your library.
+- Forgot your password? Run, in a terminal: `"%LOCALAPPDATA%\Programs\MDoP\MDoP.exe" disable-password` (Windows), `/Applications/MDoP.app/Contents/MacOS/MDoP disable-password` (macOS) or `./MDoP-<version>.AppImage disable-password` (Linux).
+- Settings and logs: `%LOCALAPPDATA%\MDoP` (Windows), `~/Library/Application Support/MDoP` and `~/Library/Logs/MDoP` (macOS), `~/.config/MDoP` and `~/.local/state/MDoP` (Linux).
 
 ## Quick start (Docker)
 
@@ -102,6 +135,15 @@ pip install -r requirements.txt
 MDOP_LIBRARY=~/mdop-library MDOP_IMPORT_ROOTS=~/Music python -m app
 ```
 
+To run the desktop app from source instead (in its own window, folders picked in Settings):
+
+```bash
+pip install -r requirements.txt -r requirements-desktop.txt
+python -m app.desktop
+```
+
+On Linux, `requirements-desktop.txt` installs Qt WebEngine; if your system already has GTK and WebKitGTK with PyGObject, pywebview can use them instead.
+
 | Variable | Purpose | Default |
 |---|---|---|
 | `MDOP_LIBRARY` | Library folder | `./library` |
@@ -138,7 +180,6 @@ MDoP is meant for your **home network**. Even with a password, the local connect
 
 ## Roadmap
 
-- Desktop version for Windows, macOS and Linux, with an installer and "open with the default program".
 - Generate MIDI from audio inside the app ([Basic Pitch](https://github.com/spotify/basic-pitch)).
 - Tab editor.
 
@@ -151,7 +192,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest
 ```
 
-The backend is FastAPI and SQLite (`app/`). The interface is plain HTML, CSS and JavaScript with no build step (`app/static/`). See [CONTRIBUTING.md](CONTRIBUTING.md).
+The backend is FastAPI and SQLite (`app/`). The interface is plain HTML, CSS and JavaScript with no build step (`app/static/`). The desktop app is a thin layer on the same code (`app/desktop.py`); its installers are built by the `desktop` workflow in GitHub Actions, which you can also run by hand to get test installers. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Third-party software
 

@@ -2,9 +2,9 @@
 
 🇺🇸 **[Read in English](README.md)** · **Português**
 
-**Uma biblioteca para as suas próprias músicas, no seu servidor.** O MDoP junta as gravações espalhadas pelo celular e pelo computador (áudios, takes, MIDIs, tablaturas do Guitar Pro, letras, capas). Riffs e rascunhos viram **ideias** para você trabalhar, o que já tem forma vira **música**, e as músicas se agrupam em **álbuns** e **bandas**. Cada música guarda todas as suas versões, então nada é substituído.
+**Uma biblioteca para as suas próprias músicas, no seu computador ou no seu servidor.** O MDoP junta as gravações espalhadas pelo celular e pelo computador (áudios, takes, MIDIs, tablaturas do Guitar Pro, letras, capas). Riffs e rascunhos viram **ideias** para você trabalhar, o que já tem forma vira **música**, e as músicas se agrupam em **álbuns** e **bandas**. Cada música guarda todas as suas versões, então nada é substituído.
 
-Roda no seu servidor de casa com Docker e abre em qualquer navegador da rede, no computador ou no celular.
+Instale **no seu computador** (Windows, macOS ou Linux) e ele abre numa janela própria, ou rode **no seu servidor de casa** com Docker e abra em qualquer navegador da rede, no computador ou no celular.
 
 ![Início](docs/images/pt/home.png)
 
@@ -27,6 +27,7 @@ Roda no seu servidor de casa com Docker e abre em qualquer navegador da rede, no
 - **Lixeira com restauração.** Nada é apagado na hora, e dá para devolver tudo ao lugar de onde saiu. Se quiser, ela se esvazia sozinha depois de 30 ou 90 dias.
 - **Senha opcional** (com pausa depois de várias tentativas erradas), interface em português ou inglês (segue o navegador por padrão), temas **escuro, claro e Vidro**, e cinco cores de destaque.
 - **Funciona sem internet.** Todas as bibliotecas que ele usa vêm junto; nada é baixado da internet.
+- **Programa para computador.** No Windows, no macOS e no Linux, o MDoP abre numa janela própria. Abra qualquer arquivo no programa dele (Guitar Pro, Reaper, seu player…) com um botão ou um duplo clique; quando você salvar lá, o MDoP oferece guardar o resultado como **nova versão** da música, e o original continua como estava.
 
 | Lista de arquivos | Ideias | Música |
 |---|---|---|
@@ -43,6 +44,38 @@ Roda no seu servidor de casa com Docker e abre em qualquer navegador da rede, no
 | Artista | Tema claro | Tema Vidro |
 |---|---|---|
 | ![Artista](docs/images/pt/artist.png) | ![Tema claro](docs/images/pt/light-theme.png) | ![Tema Vidro](docs/images/pt/glass-theme.png) |
+
+## Programa para computador (Windows, macOS, Linux)
+
+Baixe o arquivo do seu sistema na **[versão mais recente](https://github.com/carvalhopecanha/musical-display-of-power/releases/latest)**:
+
+| Sistema | Arquivo |
+|---|---|
+| Windows 10 e 11 (64 bits) | `MDoP-Setup-<versão>.exe` |
+| macOS 11 ou mais novo com Apple Silicon (M1 em diante) | `MDoP-<versão>.dmg` |
+| Linux (64 bits) | `MDoP-<versão>.AppImage` |
+
+O MDoP não é assinado com um certificado pago, então o sistema avisa na primeira vez:
+
+- **Windows:** abra o instalador. Se aparecer *O Windows protegeu o computador* (SmartScreen), clique em **Mais informações → Executar assim mesmo**. O MDoP é instalado só para o seu usuário (sem senha de administrador) e ganha um atalho no menu Iniciar. Ele usa o Microsoft Edge WebView2, que já vem no Windows 10 e 11.
+- **macOS:** abra o `.dmg` e arraste o MDoP para *Aplicativos*. Na primeira vez, o macOS diz que não consegue verificar o desenvolvedor: abra **Ajustes do Sistema → Privacidade e Segurança**, role até o fim e clique em **Abrir Mesmo Assim** (em macOS mais antigos, clique com o botão direito no app e escolha **Abrir**). Macs com processador Intel podem rodar o MDoP pelo código-fonte (veja [Rodando sem Docker](#rodando-sem-docker)).
+- **Linux:** torne o arquivo executável e abra: `chmod +x MDoP-*.AppImage && ./MDoP-*.AppImage`. Se reclamar de FUSE, instale o `libfuse2` (no Ubuntu 24.04: `sudo apt install libfuse2t64`).
+
+Na primeira abertura, o MDoP pergunta onde guardar a biblioteca (padrão: uma pasta `MDoP` dentro da sua pasta Músicas). Pode ser uma pasta nova ou uma biblioteca que você já tem: copie a pasta da biblioteca do servidor, ou restaure um backup em *Configurações → Backup*. A mesma biblioteca funciona no Docker e no programa para computador, só não nos dois ao mesmo tempo.
+
+**Só no programa para computador:**
+
+- **Abrir com o programa padrão:** o botão ↗ de cada arquivo, ou um duplo clique no arquivo, abre no programa que o seu sistema usa para ele. O MDoP abre uma **cópia**, nunca o arquivo de dentro da biblioteca.
+- **Salvar como nova versão:** quando você salva essa cópia no outro programa, aparece um aviso oferecendo guardar como nova versão da música. Se você fechar o MDoP com uma edição pendente, a cópia editada vai para a Lista de arquivos em vez de se perder.
+- **Pastas nas Configurações:** em *Configurações → Biblioteca* e *Configurações → Efeitos sonoros* você escolhe as pastas de importação e de efeitos com o seletor de pastas do sistema, sem variáveis de ambiente. *Usar outra pasta…* troca a biblioteca na próxima abertura.
+
+Bom saber:
+
+- No AppImage do Linux, o player interno não toca arquivos **M4A/AAC** (o Qt WebEngine que vai junto não traz o codec AAC); MP3, WAV, OGG, Opus e FLAC tocam normalmente. Para M4A, use *Abrir com o programa padrão*. No Windows e no macOS todos os formatos tocam.
+- O MDoP só escuta em `127.0.0.1`: outros aparelhos da rede não acessam o programa para computador. Para celular e outros computadores, use a versão Docker.
+- Atualizar: baixe a versão nova e instale por cima (Windows, macOS) ou troque o AppImage. Desinstalar remove o programa, nunca a sua biblioteca.
+- Esqueceu a senha? Rode, num terminal: `"%LOCALAPPDATA%\Programs\MDoP\MDoP.exe" disable-password` (Windows), `/Applications/MDoP.app/Contents/MacOS/MDoP disable-password` (macOS) ou `./MDoP-<versão>.AppImage disable-password` (Linux).
+- Configurações e logs: `%LOCALAPPDATA%\MDoP` (Windows), `~/Library/Application Support/MDoP` e `~/Library/Logs/MDoP` (macOS), `~/.config/MDoP` e `~/.local/state/MDoP` (Linux).
 
 ## Instalação rápida (Docker)
 
@@ -102,6 +135,15 @@ pip install -r requirements.txt
 MDOP_LIBRARY=~/mdop-library MDOP_IMPORT_ROOTS=~/Música python -m app
 ```
 
+Para rodar o programa para computador pelo código-fonte (numa janela própria, com as pastas escolhidas nas Configurações):
+
+```bash
+pip install -r requirements.txt -r requirements-desktop.txt
+python -m app.desktop
+```
+
+No Linux, o `requirements-desktop.txt` instala o Qt WebEngine; se o seu sistema já tem GTK e WebKitGTK com PyGObject, o pywebview pode usar esses no lugar.
+
 | Variável | Para que serve | Padrão |
 |---|---|---|
 | `MDOP_LIBRARY` | Pasta da biblioteca | `./library` |
@@ -138,7 +180,6 @@ O MDoP foi feito para a **rede de casa**. Mesmo com senha, a conexão local é `
 
 ## Próximos passos
 
-- Versão para computador (Windows, macOS e Linux), com instalador e "abrir com o programa padrão".
 - Gerar MIDI a partir do áudio dentro do app ([Basic Pitch](https://github.com/spotify/basic-pitch)).
 - Editor de tablatura.
 
@@ -151,7 +192,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest
 ```
 
-O backend é FastAPI com SQLite (`app/`). A interface é HTML, CSS e JavaScript puro, sem etapa de build (`app/static/`). Veja o [CONTRIBUTING.md](CONTRIBUTING.md).
+O backend é FastAPI com SQLite (`app/`). A interface é HTML, CSS e JavaScript puro, sem etapa de build (`app/static/`). O programa para computador é uma camada fina sobre o mesmo código (`app/desktop.py`); os instaladores saem do workflow `desktop` no GitHub Actions, que você também pode rodar à mão para gerar instaladores de teste. Veja o [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Bibliotecas de terceiros
 

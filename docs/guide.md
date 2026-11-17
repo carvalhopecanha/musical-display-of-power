@@ -2,7 +2,7 @@
 
 **English** · [Português](guia.md)
 
-This guide walks through MDoP from the first import to backups. If you haven't installed it yet, start with the [README](../README.md#quick-start-docker).
+This guide walks through MDoP from the first import to backups. If you haven't installed it yet, start with the README: the [desktop app](../README.md#desktop-app-windows-macos-linux) for your computer, or [Docker](../README.md#quick-start-docker) for a home server.
 
 - [1. The idea in one minute](#1-the-idea-in-one-minute)
 - [2. Adding your files](#2-adding-your-files)
@@ -20,6 +20,7 @@ This guide walks through MDoP from the first import to backups. If you haven't i
 - [14. Settings](#14-settings)
 - [15. Backup, updates and moving the library](#15-backup-updates-and-moving-the-library)
 - [16. Troubleshooting](#16-troubleshooting)
+- [17. The desktop app](#17-the-desktop-app)
 
 ## 1. The idea in one minute
 
@@ -45,7 +46,7 @@ Click **Add files** (top right on most pages). You choose two things: where the 
 
 **From**
 - **My computer:** pick files or a whole folder, or drag them onto the window.
-- **The server:** browse the import folder you chose during installation and tick files or entire folders. This is the fastest way to bring in hundreds of files.
+- **The server:** browse the import folder you chose during installation and tick files or entire folders. This is the fastest way to bring in hundreds of files. In the desktop app this tab is called **Import folders** and shows the folders you added in *Settings → Library*.
 
 **To**
 - **File list** *(recommended)*: files arrive loose so you can listen and decide later. Best for big batches.
@@ -262,7 +263,7 @@ Settings are split into tabs, and each tab has its own address (for example `#/s
 - **Security:** create a username and password (optional), change the password, log out or remove the protection. After 5 wrong passwords, that device waits 5 minutes before trying again.
 - **About:** version and project page.
 
-Settings are stored on the server and apply to every computer and phone. View modes, tab and MIDI volume are remembered per browser.
+Settings are stored on the server and apply to every computer and phone. View modes, tab and MIDI volume are remembered per browser. The desktop app has a few extra options; see [The desktop app](#17-the-desktop-app).
 
 ## 15. Backup, updates and moving the library
 
@@ -323,3 +324,37 @@ sudo docker exec mdop python -m app disable-password
 ```
 
 **Something else?** Open an issue on GitHub and describe what you did, what you expected and what happened.
+
+## 17. The desktop app
+
+On Windows, macOS and Linux, MDoP also runs as a program on your computer, in its own window and without Docker. Download and installation are in the [README](../README.md#desktop-app-windows-macos-linux). Everything in this guide works the same; this section covers what is different.
+
+**First start.** MDoP asks where to keep the library. The default is an `MDoP` folder inside your Music folder. You can pick a new folder or one that already holds an MDoP library (for example, the library folder copied from your server). To change it later, use **Settings → Library → Use another folder…**: MDoP switches on the next start. Nothing is moved: copy the library folder there first if you want to take it along.
+
+**Your folders, picked with the system dialog.** There are no environment variables to set:
+
+- **Settings → Library → Import folders:** add the folders you want to import from (a phone backup, an old recordings drive…). They show up under **Add files → Import folders**. MDoP only reads them, unless you choose to move the files.
+- **Settings → Sound effects → Add effects folder:** pick the root of your effects library. As on the server, MDoP only reads it. Removing a folder from the list only unlinks it; the files stay where they are.
+
+**Open with the default program.** Every file in a song or idea has a ↗ button, and a double-click on the file does the same: it opens in the program your system uses for that type (Guitar Pro or TuxGuitar for tabs, Reaper or Audacity for audio, a MIDI editor…). MDoP opens a **copy** kept in a working folder, never the file inside the library.
+
+**Save as new version.** When you save that copy in the other program, a notice appears in the bottom corner: *"solo.gp5" was changed in another program.*
+
+- **Save as new version** creates a new version of the song (you can name it) with the edited file. The original stays in its version, untouched. Save again later and you can keep that as yet another version.
+- **Ignore** dismisses this change. Later saves are offered again.
+- If you close MDoP while an edit is still pending, the edited copy goes to the **File list**, so it's never lost.
+
+**Backups.** They work as on the server. The backup folder is `mdop-backups`, next to the library folder (for example `Music/mdop-backups`). Copy a backup to another drive now and then.
+
+**Moving between the server and the desktop.** A library is just folders, so the same library works in both: copy the library folder, or create a backup on one side and restore it on the other (**Settings → Backup → Upload a backup**). Don't open the same folder from Docker and from the desktop app at the same time.
+
+**Troubleshooting**
+
+- **Windows says "Windows protected your PC".** MDoP is not signed with a paid certificate. Click **More info → Run anyway**.
+- **macOS says it cannot check the developer.** Open **System Settings → Privacy & Security** and click **Open Anyway**.
+- **The AppImage does not start.** Make it executable (`chmod +x`). If it mentions FUSE, install `libfuse2` (`libfuse2t64` on Ubuntu 24.04).
+- **An M4A file shows "download only" on Linux.** The AppImage's built-in player has no AAC codec. Use the ↗ button to open it in your player.
+- **"MDoP is already open in another window".** Only one MDoP runs at a time, so two windows never write to the same library. Close the other one first.
+- **Phones and other computers can't reach the desktop app.** That's on purpose: it only listens on this computer. Use the Docker version to share the library on your network.
+- **Forgot the password:** run `MDoP disable-password` in a terminal, with the full path of the program. The exact command for each system is in the [README](../README.md#desktop-app-windows-macos-linux).
+- **Something went wrong:** the log file `mdop.log` is in `%LOCALAPPDATA%\MDoP\Logs` (Windows), `~/Library/Logs/MDoP` (macOS) or `~/.local/state/MDoP/log` (Linux). Attach it to the issue.
