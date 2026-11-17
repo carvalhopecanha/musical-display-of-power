@@ -787,3 +787,18 @@ a.play-btn { text-decoration: none; }
 .settings-tabs a svg { width: 16px; height: 16px; }
 .settings-tabs a:hover { color: var(--text); }
 .settings-tabs a[aria-selected="true"] { color: var(--accent-text); border-bottom-color: var(--accent); }
+
+/* ================================================================ desktop app only */
+html:not(.is-desktop) [data-desktop] { display: none !important; }
+.edit-notes { position: fixed; right: 24px; bottom: 24px; z-index: 61; display: flex; flex-direction: column; gap: 10px; max-width: min(420px, calc(100vw - 40px)); }
+.edit-notes:empty { display: none; }
+body.has-player .edit-notes { bottom: 116px; }
+.edit-note { background: var(--toast); border: 1px solid var(--accent); color: var(--text); padding: 14px 16px; border-radius: 14px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: start; font-size: 14px; line-height: 1.5; }
+.edit-note > svg { color: var(--accent-text); margin-top: 2px; }
+.edit-note .edit-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.edit-note .edit-text strong { overflow-wrap: anywhere; }
+.edit-note .edit-text span { color: var(--text-2); overflow-wrap: anywhere; }
+.edit-note .actions { grid-column: 2; }
+.is-desktop .file-row[data-file] { cursor: default; }
+[data-theme="glass"] .edit-note { backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); }

@@ -311,13 +311,42 @@ const STR = {
   another: ['Outra', 'Another'], open: ['Abrir', 'Open'], gp_short: ['Guitar Pro', 'Guitar Pro'], other_files: ['Outros', 'Other'],
   view_grid: ['Cards grandes', 'Large cards'], view_mini: ['Miniaturas', 'Thumbnails'], view_list: ['Lista', 'List'], view_mode: ['Modo de exibição', 'View mode'],
   show_more: ['Mostrar mais', 'Show more'], col_title: ['Nome', 'Name'], col_status: ['Status', 'Status'], col_formats: ['Formatos', 'Formats'], col_updated: ['Alterada', 'Changed'],
+  // desktop app only (app/desktop.py). A key ending in _dk replaces the plain key in the desktop app.
+  open_with: ['Abrir com o programa padrão', 'Open with the default program'], open_with_x: ['Abrir {x} com o programa padrão', 'Open {x} with the default program'],
+  opened_x: ['“{x}” aberto. Ao salvar lá, o MDoP oferece guardar como nova versão.', '“{x}” opened. When you save it there, MDoP offers to keep it as a new version.'],
+  edit_found: ['“{x}” foi alterado em outro programa.', '“{x}” was changed in another program.'], edit_in: ['Em “{t}”', 'In “{t}”'],
+  edit_save: ['Salvar como nova versão', 'Save as new version'], edit_ignore: ['Ignorar', 'Ignore'],
+  edit_label: ['Editado: {x}', 'Edited: {x}'], edit_saved: ['Salvo como v{n}. O original não foi alterado.', 'Saved as v{n}. The original was not changed.'], open_song: ['Abrir', 'Open'],
+  folder_path: ['Caminho da pasta', 'Folder path'], choose_folder: ['Escolher pasta', 'Choose folder'],
+  show_folder: ['Mostrar a pasta', 'Show the folder'], import_add: ['Adicionar pasta de importação', 'Add import folder'], remove_x: ['Remover {x}', 'Remove {x}'],
+  import_folders_note: ['Pastas que aparecem em Adicionar arquivos → Pastas de importação. O MDoP só lê essas pastas, a não ser que você escolha mover os arquivos.', 'Folders shown in Add files → Import folders. MDoP only reads them, unless you choose to move the files.'],
+  library_other: ['Usar outra pasta…', 'Use another folder…'], no_import_roots: ['Nenhuma pasta ainda.', 'No folders yet.'],
+  library_switch_t: ['Usar esta pasta como biblioteca?', 'Use this folder as the library?'],
+  library_switch_p: ['O MDoP passa a usar “{p}” na próxima vez que for aberto. Nada é movido nem copiado: para levar sua biblioteca atual, feche o MDoP e copie a pasta inteira para lá antes de abrir de novo.', 'MDoP will use “{p}” the next time it opens. Nothing is moved or copied: to take your current library along, close MDoP and copy the whole folder there before opening it again.'],
+  library_switch_ok: ['Pronto. Feche e abra o MDoP para usar a nova pasta.', 'Done. Close and reopen MDoP to use the new folder.'],
+  library_next: ['Na próxima abertura: {p}', 'On the next start: {p}'], use_folder: ['Usar esta pasta', 'Use this folder'],
+  sfx_add_root: ['Adicionar pasta de efeitos', 'Add effects folder'],
+  tab_server_dk: ['Pastas de importação', 'Import folders'],
+  no_roots_t_dk: ['Nenhuma pasta de importação', 'No import folder'],
+  no_roots_p_dk: ['Escolha as pastas de onde você quer importar em Configurações → Biblioteca.', 'Choose the folders you want to import from in Settings → Library.'],
+  settings_note_dk: ['As configurações ficam salvas na sua biblioteca.', 'Settings are saved in your library.'],
+  no_connection_dk: ['O MDoP parou de responder. Feche e abra de novo.', 'MDoP stopped responding. Close it and open it again.'],
+  path_server_dk: ['Pasta da biblioteca', 'Library folder'],
+  forgot_dk: ['Esqueceu a senha? Abra um terminal e rode o MDoP assim:', 'Forgot the password? Open a terminal and run MDoP like this:'],
+  backup_note_dk: ['Um arquivo .zip com o banco de dados e todas as pastas da biblioteca. Guarde uma cópia fora deste computador de vez em quando (outro HD, a nuvem).', 'A .zip file with the database and every library folder. Keep a copy off this computer now and then (another drive, the cloud).'],
+  backup_create_dk: ['Criar backup na pasta de backups', 'Create backup in the backup folder'],
+  restoring_p_dk: ['A biblioteca está sendo trocada. Não feche o MDoP.', 'The library is being replaced. Do not close MDoP.'],
+  migrate_p_dk: ['Esta versão usa nomes de pastas em inglês. O MDoP está renomeando as pastas da sua biblioteca (nada é apagado). Leva poucos segundos; não feche o MDoP.', 'This version uses English folder names. MDoP is renaming the folders of your library (nothing is deleted). It takes a few seconds; do not close MDoP.'],
+  sfx_noroot_p_dk: ['Nenhuma pasta de efeitos ainda. Adicione em Configurações → Efeitos sonoros (o MDoP só lê essas pastas).', 'No effects folder yet. Add one in Settings → Sound effects (MDoP only reads these folders).'],
+  app_about_dk: ['O MDoP é para você guardar, organizar e achar fácil as suas músicas: cada ideia gravada, cada versão, tablatura, MIDI, letra e capa num lugar só, no seu próprio computador.', 'MDoP is for keeping, organizing and easily finding your music: every recorded idea, version, tab, MIDI, lyric and cover in one place, on your own computer.'],
 };
 // "" in Settings = follow the browser
 const BROWSER_LANG = (navigator.language || 'en').toLowerCase().startsWith('pt') ? 'pt' : 'en';
 const pickLang = (v) => (v === 'pt' || v === 'en' ? v : BROWSER_LANG);
 let LANG = BROWSER_LANG;
+let IS_DESKTOP = false;  // desktop app (set from /api/meta)
 function t(key, vars = {}) {
-  const v = STR[key];
+  const v = (IS_DESKTOP && STR[`${key}_dk`]) || STR[key];
   let s = v ? v[LANG === 'en' ? 1 : 0] : key;
   if (Array.isArray(s)) s = s[(vars.n ?? 0) === 1 ? 0 : 1];
   return String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
@@ -426,6 +455,7 @@ const ICON = {
   ftOther: svg(22, '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
   trash: svg(17, '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
   text: svg(18, '<path d="M4 6h16M4 12h16M4 18h10"/>'),
+  external: svg(18, '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
 };
 
 const probe = document.createElement('audio');
@@ -454,6 +484,7 @@ const bgImg = (url) => (url ? `background-image:url('${esc(url)}')` : '');
 
 async function api(method, url, body) {
   const opt = { method, headers: {} };
+  if (url.startsWith('/api/desktop')) opt.headers['X-MDoP-Desktop'] = '1';  // desktop-only routes ask for it
   if (body instanceof FormData) opt.body = body;
   else if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
   let res;
@@ -525,6 +556,9 @@ function go(hash) { if (location.hash === hash) render(); else location.hash = h
 async function refreshNav() {
   const [meta, albums] = await Promise.all([api('GET', '/api/meta'), api('GET', '/api/albums')]);
   state.meta = meta; state.albums = albums;
+  IS_DESKTOP = !!meta.desktop;
+  document.documentElement.classList.toggle('is-desktop', IS_DESKTOP);
+  if (IS_DESKTOP) startEditWatch();  // also catches files opened before a page reload
   applySettings(meta.settings);
   const r = route();
   const p0 = r.parts[0];
@@ -1002,6 +1036,7 @@ function versionBlock(s, v, tab) {
         <div class="img-info">${esc(f.name)}<div class="muted" style="font-size:12px">${fmtSize(f.size)}</div></div>
         <div class="img-actions">
           <button class="btn small" data-action="cover-from-file" data-id="${f.id}">${esc(t('use_as_cover'))}</button>
+          <button class="icon-btn small" data-desktop data-action="desktop-open" data-id="${f.id}" aria-label="${esc(t('open_with_x', { x: f.name }))}" title="${esc(t('open_with'))}">${ICON.external}</button>
           <a class="icon-btn small" href="${esc(f.url)}?download=1" download="${esc(f.name)}" aria-label="${esc(t('download_x', { x: f.name }))}">${ICON.downloadSm}</a>
           <button class="icon-btn small" data-action="file-menu" data-id="${f.id}" aria-label="${esc(t('more_x', { x: f.name }))}">${ICON.more}</button>
         </div></div>`).join('')}</div>`;
@@ -1025,12 +1060,13 @@ function fileRow(f) {
     ? `<button class="play-btn ghost" data-action="play-file" data-id="${f.id}" aria-label="${esc(t('play_x', { x: f.name }))}">${ICON.play}</button>`
     : midi ? `<a class="play-btn ghost" href="#/midi/${f.id}?play=1" aria-label="${esc(t('open_midi_x', { x: f.name }))}" title="${esc(t('midi_title'))}">${ICON.play}</a>`
       : `<div class="file-icon">${fileIcon(f.ext)}</div>`;
-  return `<div class="file-row ${f.main ? 'is-main' : ''}">
+  return `<div class="file-row ${f.main ? 'is-main' : ''}" data-file="${f.id}">
     ${lead}
     <div class="file-name"><strong>${esc(f.name)}</strong><span>${f.main ? `<span class="main-badge">${esc(t('main'))} · </span>` : ''}${fmtSize(f.size)} · ${fmtDate(f.created_at)}${playable || midi || TAB_EXTS.has(f.ext) ? '' : ` · ${esc(t('only_download'))}`}</span></div>
     <span class="chip ${playable || midi ? 'play' : ''}">${esc((f.ext || '?').toUpperCase())}</span>
     ${playable && songCache ? `<a class="icon-btn" href="#/listen/${songCache.id}?f=${f.id}" aria-label="${esc(t('open_sala_x', { x: f.name }))}" title="${esc(t('sala_title'))}">${ICON.headphones}</a>` : ''}
     ${TAB_EXTS.has(f.ext) ? `<a class="icon-btn" href="#/tab/${f.id}" aria-label="${esc(t('tab_view_x', { x: f.name }))}" title="${esc(t('tab_title'))}">${ICON.ftGp}</a>` : ''}
+    <button class="icon-btn" data-desktop data-action="desktop-open" data-id="${f.id}" aria-label="${esc(t('open_with_x', { x: f.name }))}" title="${esc(t('open_with'))}">${ICON.external}</button>
     <button class="icon-btn ${f.main ? 'on' : ''}" data-action="set-main" data-id="${f.id}" aria-pressed="${f.main}" aria-label="${esc(f.main ? t('is_main') : t('mark_main'))}" title="${esc(f.main ? t('is_main') : t('mark_main'))}">${f.main ? ICON.starFull : ICON.star}</button>
     <a class="icon-btn" href="${esc(f.url)}?download=1" download="${esc(f.name)}" aria-label="${esc(t('download_x', { x: f.name }))}">${ICON.download}</a>
     <button class="icon-btn" data-action="file-menu" data-id="${f.id}" aria-label="${esc(t('more_x', { x: f.name }))}">${ICON.more}</button>
@@ -2838,7 +2874,8 @@ function sfxSettingsPanel() {
         <button class="btn" data-action="sfx-rescan">${ICON.refresh}${esc(t('sfx_rescan'))}</button>
         ${m.hidden ? `<button class="btn" data-action="sfx-unhide">${esc(tn('sfx_unhide', m.hidden))}</button>` : ''}
         <span class="scan-note" id="sfx-settings-scan"></span></div>`
-      : `<p style="margin:0;line-height:1.6">${esc(t('sfx_noroot_p'))} <code>./install.sh</code></p>`}`;
+      : IS_DESKTOP ? `<div class="actions"><button class="btn" data-action="sfx-add-folder">${ICON.plus}${esc(t('sfx_add_root'))}</button></div>`
+        : `<p style="margin:0;line-height:1.6">${esc(t('sfx_noroot_p'))} <code>./install.sh</code></p>`}`;
 }
 async function bindSfxSettings() {
   const box = $('#sfx-folder-list');
@@ -3177,8 +3214,12 @@ function viewSettings(view, tab) {
         <div>${esc(t('path_server'))}: <strong>${esc(state.meta.library_host || state.meta.library)}</strong></div>
         ${state.meta.library_host ? `<div>${esc(t('path_inside'))}: <strong>${esc(state.meta.library)}</strong></div>` : ''}
         <div>${esc(t('in_use'))}: <strong>${fmtSize(state.meta.library_bytes)}</strong> · ${esc(t('free_disk'))}: <strong>${fmtSize(state.meta.disk.free)}</strong></div>
-        <div>${esc(t('import_folders'))}: <strong>${esc(state.meta.import_roots.join(', ') || t('none'))}</strong></div>
-        <div style="margin-top:8px">${esc(t('move_hint'))} <code>./install.sh move</code></div></div></div>
+        ${IS_DESKTOP ? `<div class="warn-text" id="library-next" hidden></div>
+          <div class="actions"><button class="btn small" data-action="desktop-show-library">${ICON.folder}${esc(t('show_folder'))}</button>
+            <button class="btn small" data-action="desktop-library">${esc(t('library_other'))}</button></div></div></div>
+        <div class="panel" id="import-roots-panel"><h2>${ICON.upload} ${esc(t('import_folders'))}</h2><p class="muted" style="margin:0;line-height:1.6">${esc(t('import_folders_note'))}</p>${importRootsList()}</div>`
+        : `<div>${esc(t('import_folders'))}: <strong>${esc(state.meta.import_roots.join(', ') || t('none'))}</strong></div>
+        <div style="margin-top:8px">${esc(t('move_hint'))} <code>./install.sh move</code></div></div></div>`}
       <div class="panel"><fieldset><legend>${esc(t('trash_auto_t'))}</legend>
         <p class="muted" style="margin:0 0 4px;line-height:1.6">${esc(t('trash_auto_p'))}</p>
         <div class="options">${radio('trash_days', '0', t('trash_keep'))}${radio('trash_days', '30', tn('trash_after_n', 30))}${radio('trash_days', '90', tn('trash_after_n', 90))}</div>
@@ -3204,6 +3245,23 @@ function viewSettings(view, tab) {
   bindSecurity();
   bindSfxSettings();
   bindBackup();
+  if (IS_DESKTOP && $('#library-next')) run(() => api('GET', '/api/desktop')).then(showNextLibrary);
+}
+function showNextLibrary(d) {
+  const el = $('#library-next');
+  if (!d || !el) return;
+  const changed = d.next_library && d.next_library !== d.library.replaceAll('\\', '/');
+  el.hidden = !changed;
+  el.textContent = changed ? t('library_next', { p: d.next_library }) : '';
+}
+function importRootsList() {
+  const roots = state.meta.import_roots;
+  return `${roots.length ? `<div class="folder-list">${roots.map((r) => `
+    <div class="folder-row"><span class="mod-icon">${ICON.folder}</span>
+      <span class="mod-text"><strong>${esc(r.split(/[\\/]/).filter(Boolean).pop() || r)}</strong><span>${esc(r)}</span></span>
+      <button class="icon-btn small" data-action="desktop-remove-import" data-path="${esc(r)}" aria-label="${esc(t('remove_x', { x: r }))}" title="${esc(t('remove'))}">${ICON.close}</button>
+    </div>`).join('')}</div>` : `<p class="muted" style="margin:0">${esc(t('no_import_roots'))}</p>`}
+    <div class="actions"><button class="btn" data-action="desktop-add-import">${ICON.plus}${esc(t('import_add'))}</button></div>`;
 }
 function menuPanel() {
   const m = state.meta;
@@ -3223,7 +3281,8 @@ function menuPanel() {
 }
 function securityPanel() {
   const a = state.meta.auth;
-  const forgot = `<p class="muted" style="font-size:13px;margin:0;line-height:1.7">${esc(t('forgot'))}<br><code>sudo docker exec mdop python -m app disable-password</code></p>`;
+  const forgotCmd = IS_DESKTOP ? 'MDoP disable-password' : 'sudo docker exec mdop python -m app disable-password';
+  const forgot = `<p class="muted" style="font-size:13px;margin:0;line-height:1.7">${esc(t('forgot'))}<br><code>${forgotCmd}</code></p>`;
   if (!a.enabled) {
     return `<h2>${ICON.lock} ${esc(t('security'))}</h2><p class="muted" style="margin:0">${esc(t('sec_off'))}</p>
       <form id="sec-create" style="display:flex;flex-direction:column;gap:12px;max-width:420px">
@@ -3796,7 +3855,27 @@ const actions = {
   'sfx-tag-filter': (el) => { sfxState.f.tag = el.dataset.tag; if (route().parts[0] === 'sfx') render(); else go('#/sfx'); },
   'sfx-fav-filter': () => { sfxState.f.favorite = !sfxState.f.favorite; render(); },
   'sfx-rescan': async () => { if (await run(() => api('POST', '/api/sfx/scan'))) { sfxScanTimer = 0; watchSfxScan(); } },
-  'sfx-add-folder': () => sfxFolderPicker(),
+  'sfx-add-folder': () => (IS_DESKTOP ? desktopAddSfxFolder() : sfxFolderPicker()),
+  'desktop-open': (el) => desktopOpen(Number(el.dataset.id)),
+  'desktop-show-library': () => run(() => api('POST', '/api/desktop/show-library')),
+  'desktop-library': async () => {
+    const path = await pickFolder(t('library_other'));
+    if (!path || !await confirmModal({ title: t('library_switch_t'), text: t('library_switch_p', { p: path }), confirm: t('use_folder') })) return;
+    const d = await run(() => api('POST', '/api/desktop/library', { path }));
+    if (d) { toast(t('library_switch_ok')); showNextLibrary(d); }
+  },
+  'desktop-add-import': async () => {
+    const path = await pickFolder(t('import_add'));
+    if (!path) return;
+    if (await run(() => api('POST', '/api/desktop/import-roots', { path }))) { await refreshNav(); render(); }
+  },
+  'desktop-remove-import': async (el) => {
+    if (await run(() => api('POST', '/api/desktop/import-roots/remove', { path: el.dataset.path }))) { await refreshNav(); render(); }
+  },
+  'edit-save': (el) => saveEdit(el.dataset.token),
+  'edit-dismiss': async (el) => {
+    if (await run(() => api('POST', `/api/desktop/edits/${el.dataset.token}/dismiss`))) { edits.list = edits.list.filter((x) => x.token !== el.dataset.token); drawEdits(); }
+  },
   'sfx-remove-folder': async (el) => {
     if (!await confirmModal({ title: t('sfx_unlink_t', { n: el.dataset.name }), text: t('sfx_unlink_p'), confirm: t('sfx_unlink'), danger: true })) return;
     if (await run(() => api('DELETE', `/api/sfx/folders/${el.dataset.id}`))) { await refreshNav(); render(); }
@@ -3991,6 +4070,72 @@ const actions = {
   },
   'player-close': () => { audio.pause(); $('#player').hidden = true; document.body.classList.remove('has-player'); glass.playing = null; refreshGlass(); },
 };
+
+// ================================================================ desktop app only
+// Folder dialogs come from the window (window.pywebview.api); in a plain browser the path is typed.
+async function pickFolder(title) {
+  if (window.pywebview?.api?.pick_folder) return (await window.pywebview.api.pick_folder('')) || '';
+  return (await promptModal({ title, label: t('folder_path'), confirm: t('choose_folder') })) || '';
+}
+async function desktopAddSfxFolder() {
+  const path = await pickFolder(t('sfx_add_root'));
+  if (!path) return;
+  if (!await run(() => api('POST', '/api/desktop/sfx-roots', { path }))) return;
+  toast(t('sfx_linked'));
+  await refreshNav();
+  render();
+  sfxScanTimer = 0;
+  watchSfxScan();
+}
+async function desktopOpen(fileId) {
+  const r = await run(() => api('POST', `/api/desktop/open/${fileId}`));
+  if (r) { toast(t('opened_x', { x: r.name })); startEditWatch(); }
+}
+// files opened in another program: when one is saved there, offer to keep it as a new version
+const edits = { timer: null, list: [], busy: new Set() };
+function startEditWatch() {
+  if (edits.timer) return;
+  const tick = async () => {
+    try { edits.list = await api('GET', '/api/desktop/edits'); } catch { return; }
+    drawEdits();
+  };
+  edits.timer = setInterval(tick, 2500);
+  tick();
+}
+function drawEdits() {
+  let box = $('#desktop-edits');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'desktop-edits'; box.className = 'edit-notes'; box.setAttribute('aria-live', 'polite');
+    document.body.append(box);
+  }
+  box.innerHTML = edits.list.filter((x) => !edits.busy.has(x.token)).map((x) => `
+    <div class="edit-note" role="alert">${ICON.layers}
+      <div class="edit-text"><strong>${esc(t('edit_found', { x: x.name }))}</strong><span>${esc(t('edit_in', { t: x.song_title }))}</span></div>
+      <div class="actions"><button class="btn small primary" data-action="edit-save" data-token="${esc(x.token)}">${esc(t('edit_save'))}</button>
+        <button class="btn small" data-action="edit-dismiss" data-token="${esc(x.token)}">${esc(t('edit_ignore'))}</button></div>
+    </div>`).join('');
+}
+async function saveEdit(token) {
+  const x = edits.list.find((e) => e.token === token);
+  if (!x) return;
+  const label = await promptModal({ title: t('edit_save'), label: t('version_name'), value: t('edit_label', { x: x.name }), confirm: t('edit_save') });
+  if (label === null) return;
+  edits.busy.add(token); drawEdits();
+  const r = await run(() => api('POST', `/api/desktop/edits/${token}/save`, { label }));
+  edits.busy.delete(token);
+  if (!r) { drawEdits(); return; }
+  edits.list = edits.list.filter((e) => e.token !== token); drawEdits();
+  const href = `#/${x.is_idea ? 'idea' : 'song'}/${r.song_id}`;
+  toast(t('edit_saved', { n: r.number }), { link: { href, label: t('open_song') } });
+  if (songCache?.id === r.song_id) render();
+}
+// double-click a file row (outside its buttons) to open it in its program
+document.addEventListener('dblclick', (e) => {
+  if (!IS_DESKTOP || e.target.closest('a, button, input, select, textarea')) return;
+  const row = e.target.closest('.file-row[data-file]');
+  if (row) { window.getSelection()?.removeAllRanges(); desktopOpen(Number(row.dataset.file)); }
+});
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
