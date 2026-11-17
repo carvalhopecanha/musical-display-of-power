@@ -459,7 +459,8 @@ const ICON = {
 };
 
 const probe = document.createElement('audio');
-const MIME = { mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg; codecs=opus', flac: 'audio/flac', webm: 'audio/webm' };
+// m4a/mp4 ask for the AAC codec: "audio/mp4" alone says "maybe" even where AAC cannot play (Linux Qt window, some browsers)
+const MIME = { mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4; codecs="mp4a.40.2"', mp4: 'audio/mp4; codecs="mp4a.40.2"', aac: 'audio/mp4; codecs="mp4a.40.2"', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg; codecs=opus', flac: 'audio/flac', webm: 'audio/webm' };
 const canPlay = (ext) => !!MIME[ext] && probe.canPlayType(MIME[ext]) !== '';
 
 function fmtSize(b) {
