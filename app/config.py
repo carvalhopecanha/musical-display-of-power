@@ -28,8 +28,23 @@ SFX_ROOTS = _paths(os.environ.get("MDOP_SFX_ROOTS", ""))
 # Library path as seen by the host (outside the container, in Docker). Display only.
 LIBRARY_HOST = os.environ.get("MDOP_LIBRARY_HOST", "").strip() or None
 
+# Desktop app (app/desktop.py): local window, folders chosen in Settings, "open with" and "save as new version".
+DESKTOP = os.environ.get("MDOP_DESKTOP", "") == "1"
+
 HOST = os.environ.get("MDOP_HOST", "0.0.0.0")
 PORT = int(os.environ.get("MDOP_PORT", "8090"))
+
+
+
+def set_roots(import_roots=None, sfx_roots=None) -> None:
+    """Replace the import or SFX folders while the app runs (desktop Settings).
+
+    The lists are changed in place, so modules that keep a reference to them see the change.
+    """
+    for target, value in ((IMPORT_ROOTS, import_roots), (SFX_ROOTS, sfx_roots)):
+        if value is not None:
+            target[:] = [Path(p).expanduser().resolve() for p in value]
+
 
 SONGS_DIR = LIBRARY_DIR / "songs"
 IDEAS_DIR = LIBRARY_DIR / "ideas"
