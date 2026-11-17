@@ -716,7 +716,7 @@ def origin_dir(origin: Optional[str]) -> str:
     for root in config.IMPORT_ROOTS:
         try:
             rel = parent.relative_to(root)
-            return str(rel) if str(rel) != "." else root.name
+            return rel.as_posix() if str(rel) != "." else root.name   # "/" also on Windows
         except ValueError:
             continue
     return parent.name
