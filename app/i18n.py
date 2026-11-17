@@ -112,4 +112,9 @@ PT = {
     "Style": "Estilo", "Key": "Tom", "Tuning": "Afinação", "Status": "Status", "Main file": "Arquivo principal",
     "Credits": "Créditos", "Band": "Banda", "Tempo": "Andamento",
     "Idea": "Ideia", "In progress": "Desenvolvendo", "Ready": "Pronta", "Recorded": "Gravada",
+    # desktop app
+    "Pick a folder outside the MDoP library.": "Escolha uma pasta fora da biblioteca do MDoP.",
+    "Could not open the file with the default program.": "Não foi possível abrir o arquivo com o programa padrão.",
+    "This edit is no longer available.": "Essa edição não está mais disponível.",
+    "MDoP cannot write to this folder. Choose another one.": "O MDoP não consegue gravar nessa pasta. Escolha outra.",
 }

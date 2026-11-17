@@ -58,6 +58,8 @@ def _start() -> None:
 async def lifespan(_: FastAPI):
     _start()
     yield
+    if config.DESKTOP:
+        _desktop_shutdown()
 
 
 app = FastAPI(title=config.APP_NAME, version=config.VERSION, lifespan=lifespan)
@@ -341,6 +343,7 @@ def meta():
         "bands": [{"id": b["id"], "title": b["title"],
                    "cover_url": lib.media_url(f"bands/{b['folder']}/{b['cover']}", b["updated_at"]) if b["cover"] else None}
                   for b in bands],
+        "desktop": config.DESKTOP,
         "app": config.APP_NAME, "version": config.VERSION, "repo": config.REPO_URL, "library": str(config.LIBRARY_DIR),
         "import_roots": [str(r) for r in config.IMPORT_ROOTS], "statuses": config.STATUSES,
         "styles": [{"name": s["style"], "count": s["n"]} for s in styles],
@@ -409,7 +412,11 @@ def sfx_add_folder(data: SfxFolderIn):
 @app.delete("/api/sfx/folders/{folder_id}")
 def sfx_remove_folder(folder_id: int):
     with db.connect() as conn:
+        row = conn.execute("SELECT path FROM sfx_folders WHERE id = ?", (folder_id,)).fetchone()
         sfx.remove_folder(conn, folder_id)
+    if config.DESKTOP and row:
+        # on the desktop, each linked folder is also its own root: unlinking it forgets the root too
+        _desktop_forget_root("sfx_roots", row["path"])
     return {"ok": True}
 
 
@@ -1340,6 +1347,159 @@ def get_settings():
 def put_settings(data: SettingsIn):
     with db.connect() as conn:
         return lib.set_settings(conn, data.model_dump(exclude_none=True))
+
+
+# ================================================================ desktop app only
+# These routes exist only in the desktop app (app/desktop.py). On the server they answer 404.
+# They also require the X-MDoP-Desktop header, so another web page open in a browser
+# cannot call them (a custom header needs CORS, which MDoP never allows).
+
+DESKTOP_HEADER = "x-mdop-desktop"
+
+
+def _desktop_only(request: Request) -> None:
+    if not config.DESKTOP:
+        raise HTTPException(404)
+    if request.headers.get(DESKTOP_HEADER) != "1":
+        raise HTTPException(403)
+
+
+def _desktop_forget_root(key: str, path: str) -> None:
+    from . import desktop_prefs
+    prefs = desktop_prefs.remove_root(key, path)
+    config.set_roots(**{key: prefs[key]})
+
+
+def _desktop_shutdown() -> None:
+    from . import opener
+    try:
+        with db.connect() as conn:
+            if kept := opener.cleanup(conn):
+                log.info("%s edited file(s) not saved as versions were kept in the File list.", kept)
+    except Exception as exc:  # closing the app must never fail because of this
+        log.warning("Could not clean up the working copies: %s", exc)
+
+
+class DesktopPathIn(BaseModel):
+    path: str
+
+
+class DesktopSaveIn(BaseModel):
+    label: str = ""
+
+
+def _desktop_info() -> dict:
+    from . import desktop_prefs, opener
+    return {"library": str(config.LIBRARY_DIR), "backup_dir": str(config.BACKUP_DIR),
+            "import_roots": [str(r) for r in config.IMPORT_ROOTS], "sfx_roots": [str(r) for r in config.SFX_ROOTS],
+            "next_library": desktop_prefs.load()["library"],
+            "settings_file": str(desktop_prefs.prefs_path()), "work_dir": str(opener.work_dir())}
+
+
+def _existing_dir(path: str) -> Path:
+    p = Path(path.strip()).expanduser()
+    if not path.strip() or not p.is_dir():
+        raise LibraryError("Folder not found.")
+    return p.resolve()
+
+
+@app.get("/api/desktop")
+def desktop_info(request: Request):
+    _desktop_only(request)
+    return _desktop_info()
+
+
+@app.post("/api/desktop/import-roots")
+def desktop_add_import_root(data: DesktopPathIn, request: Request):
+    _desktop_only(request)
+    from . import desktop_prefs
+    p = _existing_dir(data.path)
+    if lib.within(p, config.LIBRARY_DIR) or lib.within(config.LIBRARY_DIR, p):
+        raise LibraryError("Pick a folder outside the MDoP library.")
+    prefs = desktop_prefs.add_root("import_roots", p)
+    config.set_roots(import_roots=prefs["import_roots"])
+    return _desktop_info()
+
+
+@app.post("/api/desktop/import-roots/remove")
+def desktop_remove_import_root(data: DesktopPathIn, request: Request):
+    _desktop_only(request)
+    _desktop_forget_root("import_roots", data.path)
+    return _desktop_info()
+
+
+@app.post("/api/desktop/sfx-roots")
+def desktop_add_sfx_root(data: DesktopPathIn, request: Request):
+    """Link an effects folder picked with the system dialog (it becomes a root and a linked folder)."""
+    _desktop_only(request)
+    from . import desktop_prefs
+    p = _existing_dir(data.path)
+    if lib.within(p, config.LIBRARY_DIR) or lib.within(config.LIBRARY_DIR, p):
+        raise LibraryError("Pick a folder outside the MDoP library.")
+    old_roots = [str(r) for r in config.SFX_ROOTS]
+    config.set_roots(sfx_roots=old_roots + [str(p)])
+    try:
+        with db.connect() as conn:
+            fid = sfx.add_folder(conn, str(p))
+    except Exception:
+        config.set_roots(sfx_roots=old_roots)
+        raise
+    desktop_prefs.add_root("sfx_roots", p)
+    return {"id": fid, "scan": sfx.start_scan(fid), **_desktop_info()}
+
+
+@app.post("/api/desktop/open/{file_id}")
+def desktop_open(file_id: int, request: Request):
+    """Open a copy of the file in the system's default program (the original is never changed)."""
+    _desktop_only(request)
+    from . import opener
+    with db.connect() as conn:
+        return opener.open_copy(conn, file_id)
+
+
+@app.post("/api/desktop/library")
+def desktop_set_library(data: DesktopPathIn, request: Request):
+    """Use another library folder from the next start on. Nothing is moved or copied."""
+    _desktop_only(request)
+    from . import desktop_prefs
+    error = desktop_prefs.check_library_folder(data.path)
+    if error:
+        raise LibraryError("MDoP cannot write to this folder. Choose another one." if error == "not_writable"
+                           else "Folder not found.")
+    desktop_prefs.update(library=desktop_prefs.norm(data.path))
+    return {"next_library": desktop_prefs.norm(data.path), **_desktop_info()}
+
+
+@app.post("/api/desktop/show-library")
+def desktop_show_library(request: Request):
+    _desktop_only(request)
+    from . import opener
+    opener.launcher(config.LIBRARY_DIR)
+    return {"ok": True}
+
+
+@app.get("/api/desktop/edits")
+def desktop_edits(request: Request):
+    _desktop_only(request)
+    from . import opener
+    with db.connect() as conn:
+        return opener.pending_edits(conn)
+
+
+@app.post("/api/desktop/edits/{token}/save")
+def desktop_edit_save(token: str, data: DesktopSaveIn, request: Request):
+    _desktop_only(request)
+    from . import opener
+    with db.connect() as conn:
+        return opener.save_as_version(conn, token, data.label)
+
+
+@app.post("/api/desktop/edits/{token}/dismiss")
+def desktop_edit_dismiss(token: str, request: Request):
+    _desktop_only(request)
+    from . import opener
+    opener.dismiss(token)
+    return {"ok": True}
 
 
 # ================================================================ media files and pages
