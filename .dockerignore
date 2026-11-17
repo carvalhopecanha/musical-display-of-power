@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+library
+biblioteca
+backups
+no-sfx
+tests
+__pycache__
+*.pyc
+.env
+docs

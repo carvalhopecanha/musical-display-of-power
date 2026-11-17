@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-accent="yellow">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Musical Display of Power</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="/static/app.css?v=1.0.0-r2">
+</head>
+<body>
+<div id="glass-bg" aria-hidden="true"></div>
+<div class="shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="content" id="view" tabindex="-1"></main>
+</div>
+
+<div class="player" id="player" hidden>
+  <div class="vinyl" id="player-vinyl" aria-hidden="true"><span class="vinyl-label" id="player-cover"></span></div>
+  <div class="player-mid">
+    <div class="player-text"><strong id="player-title"></strong><span id="player-file"></span></div>
+    <div class="player-progress">
+      <span class="time" id="player-time">0:00</span>
+      <input type="range" id="player-seek" min="0" max="1000" value="0">
+      <span class="time" id="player-duration">0:00</span>
+    </div>
+  </div>
+  <div class="player-buttons">
+    <button class="icon-btn bare" data-action="player-prev" id="player-prev"></button>
+    <button class="play-btn small" data-action="player-toggle" id="player-toggle"></button>
+    <button class="icon-btn bare" data-action="player-next" id="player-next"></button>
+    <button class="icon-btn bare" data-action="player-sala" id="player-sala" hidden></button>
+    <button class="icon-btn bare" data-action="player-close" id="player-close"></button>
+  </div>
+  <audio id="audio" preload="metadata"></audio>
+</div>
+
+<div id="modal-root"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<input type="file" id="hidden-image-input" accept="image/*" hidden>
+
+<script src="/static/app.js?v=1.0.0-r2"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Your settings and your music: never commit these
+.env
+library/
+import/
+backups/
+no-sfx/
+biblioteca/
+sem-efeitos/
+mdop-biblioteca/
+
+# Packages and system files (macOS creates ._ files when copying)
+*.tar.gz
+*.zip
+!tests/fixtures/*.zip
+.DS_Store
+._*
+Thumbs.db

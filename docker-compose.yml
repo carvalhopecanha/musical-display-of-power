@@ -1,0 +1,32 @@
+# Paths come from the .env file (create it with ./install.sh, or copy .env.example).
+# Caminhos vêm do arquivo .env (crie com ./install.sh ou copie o .env.example).
+services:
+  mdop:
+    # ready-made image (amd64 and arm64); ./install.sh builds it locally if it cannot be downloaded
+    image: ghcr.io/carvalhopecanha/musical-display-of-power:${MDOP_TAG:-1}
+    build: .
+    container_name: mdop
+    user: "${PUID:-1000}:${PGID:-1000}"
+    ports:
+      - "${MDOP_PORT:-${MDOP_PORTA:-8090}}:8090"
+    environment:
+      # Only shown in Settings, so you know where the library is on the server.
+      - MDOP_LIBRARY_HOST=${MDOP_LIBRARY:-${MDOP_BIBLIOTECA:-}}
+      - MDOP_BACKUP_HOST=${MDOP_BACKUPS:-./backups}
+      - MDOP_SFX_ROOTS=/sfx
+      - MDOP_BACKUP_DIR=/backups
+      - MDOP_MAX_UPLOAD_MB=${MDOP_MAX_UPLOAD_MB:-2048}
+    volumes:
+      # Where MDoP keeps the organized songs, covers and the database.
+      - type: bind
+        source: "${MDOP_LIBRARY:-${MDOP_BIBLIOTECA:-./library}}"
+        target: /library
+      # Folder with your files, to import from "Add files → From the server".
+      - type: bind
+        source: "${MDOP_IMPORT:-${MDOP_IMPORTAR:-./import}}"
+        target: /import
+      # Sound effects: MDoP only reads this folder (":ro" = read-only).
+      - "${MDOP_SFX:-${MDOP_EFEITOS:-./no-sfx}}:/sfx:ro"
+      # Where backups are stored.
+      - "${MDOP_BACKUPS:-./backups}:/backups"
+    restart: unless-stopped
