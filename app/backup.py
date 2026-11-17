@@ -87,7 +87,9 @@ def _library_files(include_trash: bool) -> list[Path]:
 
 def _db_snapshot() -> Path:
     """Consistent copy of the database, even while the app is in use (SQLite backup API)."""
-    tmp = Path(tempfile.mkstemp(prefix="mdop-db-", suffix=".db")[1])
+    fd, name = tempfile.mkstemp(prefix="mdop-db-", suffix=".db")
+    os.close(fd)   # an open handle would keep Windows from deleting the file later
+    tmp = Path(name)
     src = sqlite3.connect(config.DB_PATH)
     dst = sqlite3.connect(tmp)
     try:
