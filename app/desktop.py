@@ -7,8 +7,9 @@ Without pywebview it opens the default browser instead.
 The library and the folders the user picks are kept in desktop_prefs (a JSON file in the
 system's settings folder), never in environment variables the user has to set.
 
-Extra command:
+Extra commands:
   MDoP disable-password   remove password protection (for when the password is forgotten)
+  MDoP self-test          start without a window, check that everything answers, quit (used by the build)
 """
 import json
 import logging
@@ -227,11 +228,61 @@ def disable_password() -> None:
     print("Password protection removed. / Proteção por senha removida.")
 
 
+def self_test() -> int:
+    """Start the packaged app without a window, check that it answers, and quit (used by the build)."""
+    import shutil
+    import tempfile
+    import traceback
+    tmp = Path(tempfile.mkdtemp(prefix="mdop-selftest-"))
+    os.environ["MDOP_DESKTOP_CONFIG"] = str(tmp / "settings")
+    os.environ["MDOP_DESKTOP_CACHE"] = str(tmp / "cache")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    server = None
+    try:
+        prefs.update(library=(tmp / "Biblioteca de Teste Ação").as_posix())
+        server = _start_server()
+        get = lambda path: urllib.request.urlopen(server.url + path, timeout=10).read()  # noqa: E731
+        meta = json.loads(get("/api/meta"))
+        assert meta["desktop"] is True, "not in desktop mode"
+        assert b"app.js" in get("/"), "interface missing"
+        assert len(get("/static/app.js")) > 10_000, "app.js missing"
+        assert get("/static/vendor/alphatab/alphaTab.min.js"), "tab viewer missing"
+        assert (Path(__file__).parent / "desktop_setup.html").is_file(), "first-run page missing"
+        import webview  # noqa: F401  (the window library is bundled)
+        print(f"MDoP {meta['version']} self-test OK ({sys.platform})")
+        return 0
+    except Exception:
+        traceback.print_exc()
+        return 1
+    finally:
+        if server:
+            server.stop()
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _attach_console() -> None:
+    """Windows: the packaged program has no console of its own; show command output in the terminal that ran it."""
+    if sys.platform != "win32" or not getattr(sys, "frozen", False):
+        return
+    try:
+        import ctypes
+        if ctypes.windll.kernel32.AttachConsole(-1):
+            sys.stdout = open("CONOUT$", "w", encoding="utf-8")
+            sys.stderr = sys.stdout
+    except Exception:
+        pass
+
+
 def main() -> None:
+    command = sys.argv[1] if len(sys.argv) > 1 else ""
+    if command:
+        _attach_console()
     _fix_std_streams()
-    if len(sys.argv) > 1 and sys.argv[1] in ("disable-password", "desligar-senha"):
+    if command in ("disable-password", "desligar-senha"):
         disable_password()
         return
+    if command == "self-test":
+        sys.exit(self_test())
     logs = _setup_logging()
     if sys.platform.startswith("linux") and getattr(sys, "frozen", False):
         # QtWebEngine's sandbox needs user namespaces that some distributions block for AppImages.
