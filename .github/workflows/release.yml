@@ -3,6 +3,7 @@ name: release
 # Publishing a version tag (for example v1.0.0) builds the Docker image for
 # amd64 and arm64 (Raspberry Pi and similar) and publishes it on GitHub Packages:
 #   ghcr.io/carvalhopecanha/musical-display-of-power:1.0.0, :1.0, :1 and :latest
+# It also builds the desktop installers (desktop.yml) and attaches them to the GitHub Release.
 on:
   push:
     tags: ["v*.*.*"]
@@ -43,12 +44,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  desktop:
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: ./.github/workflows/desktop.yml
+
   release:
-    needs: image
+    needs: [image, desktop]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mdop-*
+          path: installers
+          merge-multiple: true
       - name: Release notes from CHANGELOG.md
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -57,3 +67,5 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           body_path: notes.md
+          files: installers/*
+          fail_on_unmatched_files: true

@@ -20,7 +20,9 @@ jobs:
       - run: python -m pytest -q
       - name: Check JavaScript syntax
         run: node --check app/static/app.js
-      - name: Check the installer
-        run: bash -n install.sh && bash -n instalar.sh
+      - name: Check the installer and the desktop packaging scripts
+        run: |
+          bash -n install.sh && bash -n instalar.sh
+          bash -n packaging/linux/build-appimage.sh && bash -n packaging/macos/build-dmg.sh
       - name: Build the Docker image
         run: docker build -t mdop:test .
