@@ -99,6 +99,14 @@ PT = {
         "A pasta de backups não aceita gravação. Confira a pasta escolhida no instalador.",
     "The backup is incomplete (the database is missing).": "O backup está incompleto (falta o banco de dados).",
     "The backup has invalid paths and will not be restored.": "O backup tem caminhos inválidos e não será restaurado.",
+    "Sound effects are being read. Wait for it to finish, then restore.":
+        "Os efeitos sonoros estão sendo lidos. Espere terminar e depois restaure.",
+    "Not enough free space on the library drive to restore this backup (it needs {mb} MB).":
+        "Não há espaço livre suficiente no disco da biblioteca para restaurar este backup (ele precisa de {mb} MB).",
+    "A previous restore did not finish: check the {name} folder in the library and delete it once nothing there is needed.":
+        "Uma restauração anterior não terminou: confira a pasta {name} na biblioteca e apague-a quando nada nela for necessário.",
+    "The library is still busy. Nothing was changed; try again in a moment.":
+        "A biblioteca ainda está em uso. Nada foi alterado; tente de novo daqui a pouco.",
     "To restore, the backup folder must be writable (the safety copy goes there).":
         "Para restaurar, a pasta de backups precisa aceitar gravação (lá fica a cópia de segurança).",
     # names given to new things

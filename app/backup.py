@@ -50,10 +50,19 @@ def request_finished() -> None:
         _inflight_cond.notify_all()
 
 
-def _wait_for_requests(timeout: float = 120) -> None:
+def _wait_for_requests(timeout: float = 120) -> bool:
     """After MAINTENANCE is on, new requests are refused; wait for the ones already running to finish."""
     with _inflight_cond:
-        _inflight_cond.wait_for(lambda: _inflight["n"] <= 0, timeout=timeout)
+        return _inflight_cond.wait_for(lambda: _inflight["n"] <= 0, timeout=timeout)
+
+
+# A restore is first extracted here, inside the library (same drive, so swapping is only a rename);
+# the current library goes to REPLACED_DIR until the swap is done. Neither is ever backed up.
+STAGING_DIR = ".mdop-restoring"
+REPLACED_DIR = ".mdop-replaced"
+SPARE_BYTES = 64 * 1024 * 1024
+
+
 JOB = {"kind": "", "running": False, "done": 0, "total": 0, "name": "", "error": "", "finished_at": None,
        "safety": ""}
 
@@ -68,7 +77,7 @@ def _backup_dir_inside_library() -> bool:
 
 def _library_files(include_trash: bool) -> list[Path]:
     """Everything in the library except the database (saved as a safe copy) and the backup folder itself."""
-    skip_dirs = {config.DATA_DIR}
+    skip_dirs = {config.DATA_DIR, config.LIBRARY_DIR / STAGING_DIR, config.LIBRARY_DIR / REPLACED_DIR}
     if not include_trash:
         skip_dirs.add(config.TRASH_DIR)
     if _backup_dir_inside_library():
@@ -314,50 +323,108 @@ def _check_zip(path: Path) -> dict:
     return manifest
 
 
+def _restore_targets(zf: zipfile.ZipFile, dest: Path) -> list[tuple[zipfile.ZipInfo, Path]]:
+    """Where each entry of the backup goes, inside `dest` (laid out like the library)."""
+    db_target = dest / config.DB_PATH.relative_to(config.LIBRARY_DIR)
+    out = []
+    for i in zf.infolist():
+        if i.is_dir() or i.filename == MANIFEST:
+            continue
+        if i.filename == DB_ENTRY:
+            out.append((i, db_target))
+        elif i.filename.startswith(LIB_PREFIXES):
+            prefix = next(p for p in LIB_PREFIXES if i.filename.startswith(p))
+            out.append((i, dest / i.filename[len(prefix):]))
+    return out
+
+
+def _extract(path: Path, dest: Path) -> None:
+    """Extract the backup into `dest`. zipfile checks each file's CRC while reading, so a damaged
+    backup fails here, before the library is touched."""
+    with zipfile.ZipFile(path) as zf:
+        targets = _restore_targets(zf, dest)
+        JOB.update(done=0, total=sum(i.file_size for i, _ in targets))
+        for i, target in targets:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(i) as src, target.open("wb") as out:
+                while chunk := src.read(CHUNK):
+                    out.write(chunk)
+                    JOB["done"] += len(chunk)
+
+
+def _keep_in_place(child: Path) -> bool:
+    """Library entries a restore never moves: its own work folders and a backup folder kept inside the library."""
+    return (child.name in (STAGING_DIR, REPLACED_DIR)
+            or child == config.BACKUP_DIR or child in config.BACKUP_DIR.parents)
+
+
+def _swap_in(staging: Path, replaced: Path) -> None:
+    """Move the current library aside and the extracted one in. Only renames, on the same drive;
+    if one fails, the ones already done are undone and the library is as it was."""
+    moved_out, moved_in = [], []
+    try:
+        replaced.mkdir()
+        for child in sorted(config.LIBRARY_DIR.iterdir()):
+            if not _keep_in_place(child):
+                child.rename(replaced / child.name)
+                moved_out.append(child.name)
+        for child in sorted(staging.iterdir()):
+            child.rename(config.LIBRARY_DIR / child.name)
+            moved_in.append(child.name)
+    except BaseException:
+        for name in reversed(moved_in):
+            (config.LIBRARY_DIR / name).rename(staging / name)
+        for name in reversed(moved_out):
+            (replaced / name).rename(config.LIBRARY_DIR / name)
+        raise
+
+
 def start_restore(path: Path) -> dict:
+    from . import sfx   # imported here: sfx is not needed by plain backups
     manifest = _check_zip(path)
     if not _writable(config.BACKUP_DIR):
         raise LibraryError("To restore, the backup folder must be writable (the safety copy goes there).")
+    if sfx.SCAN["running"]:
+        raise LibraryError("Sound effects are being read. Wait for it to finish, then restore.")
+    with zipfile.ZipFile(path) as zf:
+        needed = sum(i.file_size for i, _ in _restore_targets(zf, config.LIBRARY_DIR)) + SPARE_BYTES
+    if shutil.disk_usage(config.LIBRARY_DIR).free < needed:
+        raise LibraryError("Not enough free space on the library drive to restore this backup (it needs {mb} MB).",
+                           mb=needed // (1024 * 1024))
+    staging, replaced = config.LIBRARY_DIR / STAGING_DIR, config.LIBRARY_DIR / REPLACED_DIR
 
     def work():
         JOB["name"] = path.name
+        for leftover in (staging, replaced):   # from a restore interrupted by a power cut
+            if leftover.exists():
+                raise LibraryError("A previous restore did not finish: check the {name} folder in the library "
+                                   "and delete it once nothing there is needed.", name=leftover.name)
         # 1. safety copy of the current library, before touching anything
         if _library_has_content():
             JOB["safety"] = default_name("before-restore")
             create(config.BACKUP_DIR, JOB["safety"], True, JOB)
         MAINTENANCE["on"] = True
-        _wait_for_requests()
-        # 2. empty the library (backups stay, if they are inside it)
-        for child in config.LIBRARY_DIR.iterdir():
-            if child == config.BACKUP_DIR or child in config.BACKUP_DIR.parents:
-                continue
-            if child.is_dir() and not child.is_symlink():
-                _rmtree(child)
-            else:
-                child.unlink(missing_ok=True)
-        # 3. extract the backup
-        with zipfile.ZipFile(path) as zf:
-            infos = [i for i in zf.infolist() if not i.is_dir()]
-            JOB.update(done=0, total=sum(i.file_size for i in infos))
-            for i in infos:
-                if i.filename == MANIFEST:
-                    continue
-                if i.filename == DB_ENTRY:
-                    target = config.DB_PATH
-                elif i.filename.startswith(LIB_PREFIXES):
-                    prefix = next(p for p in LIB_PREFIXES if i.filename.startswith(p))
-                    target = config.LIBRARY_DIR / i.filename[len(prefix):]
-                else:
-                    continue
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with zf.open(i) as src, target.open("wb") as out:
-                    while True:
-                        chunk = src.read(CHUNK)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        JOB["done"] += len(chunk)
-        # 4. bring a backup from an earlier version up to date (folder names, then the database)
+        if not _wait_for_requests():
+            raise LibraryError("The library is still busy. Nothing was changed; try again in a moment.")
+        # 2. extract to a separate folder: if the backup is damaged or the drive fills up, the library is untouched
+        try:
+            _extract(path, staging)
+            # 3. swap the folders (renames only)
+            _swap_in(staging, replaced)
+        except BaseException:
+            # the current library is back in place: only the extracted copy is deleted. If the undo itself
+            # failed, both folders are kept as they are, so nothing is lost (the error says where to look).
+            if not replaced.exists() or not any(replaced.iterdir()):
+                if replaced.exists():
+                    replaced.rmdir()
+                if staging.exists():
+                    _rmtree(staging)
+            raise
+        # 4. the backup is in place: delete the old library (it is also in the safety copy)
+        for done in (staging, replaced):
+            if done.exists():
+                _rmtree(done)
+        # 5. bring a backup from an earlier version up to date (folder names, then the database)
         migrate.run(full_backup=False)
         db.init()
         if not manifest.get("include_trash", True):

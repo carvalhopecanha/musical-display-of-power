@@ -1,6 +1,7 @@
 """SFX from linked folders, configurable menu, paths with "/" and backup/restore."""
 import io
 import math
+import shutil
 import os
 import struct
 import time
@@ -208,3 +209,80 @@ def test_trash_cleanup_only_old_items(c):
     assert ok(c.put("/api/settings", json={"trash_days": "30"}))["trash_days"] == "30"
     assert c.put("/api/settings", json={"trash_days": "7"}).status_code == 400
     ok(c.put("/api/settings", json={"trash_days": "0"}))
+
+
+# ---------------------------------------------------------------- restore never leaves a half library
+
+def wait_job(c):
+    for _ in range(400):
+        job = ok(c.get("/api/backup/status"))
+        if not job["running"]:
+            return job
+        time.sleep(0.05)
+    raise AssertionError("the backup job did not finish")
+
+
+def make_backup(c, marker: bytes) -> str:
+    song = ok(c.post("/api/songs", json={"title": "No backup"}))
+    ok(c.post("/api/import/upload", data={"target": "existing", "song_id": str(song["id"])},
+              files=[("files", ("inside.mp3", b"ID3" + marker * 5000, "audio/mpeg"))]))
+    ok(c.post("/api/backup", json={"include_trash": True}))
+    job = wait_job(c)
+    assert not job["error"], job["error"]
+    return job["name"]
+
+
+def library_state(c):
+    titles = sorted(s["title"] for s in ok(c.get("/api/songs")))
+    leftovers = [p.name for p in Path(config.LIBRARY_DIR).iterdir() if p.name.startswith(".mdop-")]
+    return titles, leftovers
+
+
+def test_restore_of_damaged_backup_keeps_the_library(c):
+    name = make_backup(c, b"q")
+    data = bytearray((BACKUPS / name).read_bytes())
+    at = data.index(b"q" * 5000) + 2500
+    data[at] = ord("Z")   # one changed byte: the file's CRC no longer matches
+    (BACKUPS / "damaged.zip").write_bytes(bytes(data))
+    ok(c.post("/api/songs", json={"title": "Made after the backup"}))
+    before = library_state(c)
+    ok(c.post("/api/backup/restore", json={"name": "damaged.zip"}))
+    job = wait_job(c)
+    assert job["error"], "a damaged backup must not be restored"
+    assert library_state(c) == before and not before[1]
+    assert "Made after the backup" in before[0]
+
+
+def test_restore_refused_without_free_space(c, monkeypatch):
+    from app import backup
+    name = make_backup(c, b"s")
+    before = library_state(c)
+    real = shutil.disk_usage
+    monkeypatch.setattr(backup.shutil, "disk_usage", lambda p: real(p)._replace(free=1000))
+    r = c.post("/api/backup/restore", json={"name": name})
+    assert r.status_code == 400 and "space" in r.json()["detail"]
+    monkeypatch.setattr(backup.shutil, "disk_usage", real)
+    assert library_state(c) == before
+
+
+def test_restore_undoes_a_failed_swap(c, monkeypatch):
+    name = make_backup(c, b"w")
+    ok(c.post("/api/songs", json={"title": "Still here after the failed swap"}))
+    before = library_state(c)
+    real_rename, calls = Path.rename, {"in": 0}
+
+    def flaky_rename(self, target):
+        if Path(target).parent == config.LIBRARY_DIR and ".mdop-restoring" in str(self):
+            calls["in"] += 1
+            if calls["in"] == 2:   # the second folder coming in from the backup fails
+                raise OSError("simulated failure")
+        return real_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", flaky_rename)
+    ok(c.post("/api/backup/restore", json={"name": name}))
+    job = wait_job(c)
+    monkeypatch.setattr(Path, "rename", real_rename)
+    assert "simulated failure" in job["error"]
+    assert library_state(c) == before
+    song = next(s for s in ok(c.get("/api/songs")) if s["title"] == "Still here after the failed swap")
+    assert ok(c.get(f"/api/songs/{song['id']}"))["versions"]
