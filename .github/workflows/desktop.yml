@@ -25,9 +25,9 @@ jobs:
           - { name: linux, os: ubuntu-22.04 }     # older glibc: the AppImage runs on more distributions
           - { name: macos, os: macos-latest }     # Apple Silicon
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -84,7 +84,7 @@ jobs:
         if: runner.os == 'macOS'
         run: packaging/macos/build-dmg.sh "${{ steps.v.outputs.version }}" dist out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: mdop-${{ matrix.name }}
           path: out/*
