@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Versions follow [Semant
 
 *Português: as mudanças de cada versão, em inglês.*
 
+## [1.1.1] - 2026-11-26
+
+Security and safety fixes for the server (local network) and the desktop app. Nothing changes in how MDoP is used.
+
+### Fixed
+- **The database could be read through `/media/`** with a path containing `..` (for example `songs/../.mdop/mdop.db`), which exposed the password hash and the session secret. Hidden library folders (`.mdop`, `.trash`) are now checked after the path is resolved.
+- **Other sites can no longer change the library through your browser** (cross-site request forgery). Without a password, any page opened on a computer of the network could, for example, empty the trash with a hidden form. Requests that change something are refused when the browser says they came from another site, including other services on the same server.
+- **Restoring a backup never leaves a half library.** The backup is first extracted to a separate folder on the same drive (checking every file), and only then swapped in with renames. A damaged backup, a full drive or a failure while swapping leaves the current library exactly as it was. The restore is refused up front when the drive does not have room, while sound effects are being read, or if the library stays busy.
+
 ## [1.1.0] - 2026-11-17
 
 Desktop app. The same code now also runs as a program on your computer, without Docker. The server version works exactly as before.
