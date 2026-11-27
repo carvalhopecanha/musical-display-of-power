@@ -678,3 +678,34 @@ def test_idea_trash_restore_and_song_status(c):
     s = ok(c.post("/api/songs", json={"title": "Status novo"}))
     assert s["status"] == "in_progress"
     assert c.patch(f"/api/songs/{s['id']}", json={"status": "idea"}).status_code == 400
+
+
+# ---------------------------------------------------------------- hidden folders and cross-site requests
+
+def test_media_hidden_folders_after_resolving(c):
+    """'..' inside the path must not reach .mdop or .trash (the database holds the password hash and session secret)."""
+    (LIB / ".trash").mkdir(parents=True, exist_ok=True)
+    (LIB / ".trash" / "gone.mp3").write_bytes(b"x" * 10)
+    for url in ("/media/songs%2F..%2F.mdop%2Fmdop.db", "/media/songs%2F..%2F.trash%2Fgone.mp3",
+                "/media/ideas%2F..%2F.mdop%2Fmdop.db", "/media/songs%2F..%2F.MDOP%2Fmdop.db"):
+        assert c.get(url).status_code == 404, url
+
+
+def test_cross_site_writes_are_refused(c):
+    """A page on another site (or another service on the same server) cannot change the library through the browser."""
+    for site in ("cross-site", "same-site"):
+        r = c.post("/api/trash/empty", headers={"Sec-Fetch-Site": site})
+        assert r.status_code == 403, site
+        assert c.delete("/api/backup/files/x.zip", headers={"Sec-Fetch-Site": site}).status_code == 403
+    # browsers without Sec-Fetch-* still send Origin
+    assert c.post("/api/loose/dedupe", headers={"Origin": "http://evil.example"}).status_code == 403
+    assert c.post("/api/sfx/unhide", headers={"Origin": "null"}).status_code == 403
+    # reading stays allowed (pages, audio and covers can be embedded)
+    assert c.get("/api/health", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 200
+
+
+def test_same_origin_writes_still_work(c):
+    assert c.post("/api/sfx/unhide", headers={"Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert c.post("/api/sfx/unhide", headers={"Sec-Fetch-Site": "none"}).status_code == 200   # typed by the user
+    assert c.post("/api/sfx/unhide", headers={"Origin": "http://testserver"}).status_code == 200
+    assert c.post("/api/sfx/unhide").status_code == 200   # scripts and curl send neither header

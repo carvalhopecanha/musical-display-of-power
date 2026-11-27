@@ -14,7 +14,7 @@ import logging
 import shutil as _sh
 import threading
 import time
-from urllib.parse import quote as _quote
+from urllib.parse import quote as _quote, urlsplit
 
 from . import artists as art
 from . import auth, backup, config, db, i18n, migrate, sfx, trash, zips
@@ -65,12 +65,35 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title=config.APP_NAME, version=config.VERSION, lifespan=lifespan)
 
 OPEN_PATHS = {"/api/auth/status", "/api/auth/login", "/api/health"}
+# library folders that are never served as media (database, trash; .lixeira = early builds)
+HIDDEN_DIRS = (".mdop", ".trash", ".lixeira")
+SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def _cross_site(request: Request) -> bool:
+    """A change requested by a page from another site, through the user's browser (CSRF).
+
+    MDoP runs on the local network, often without a password, so any page the user opens could
+    otherwise empty the trash or restore a backup with a hidden form. "same-site" is refused too:
+    on a home server, other services on the same address count as the same site.
+    Requests with neither header (curl, scripts) are not from a browser page and stay allowed.
+    """
+    site = request.headers.get("sec-fetch-site")
+    if site is not None:
+        return site not in ("same-origin", "none")
+    origin = request.headers.get("origin")
+    if origin is None:
+        return False
+    return origin == "null" or urlsplit(origin).netloc.lower() != (request.headers.get("host") or "").lower()
 
 
 @app.middleware("http")
 async def require_login(request: Request, call_next):
     path = request.url.path
     uses_library = path.startswith("/api/") or path.startswith("/media/")
+    if uses_library and request.method not in SAFE_METHODS and _cross_site(request):
+        i18n.LANG.set(i18n.pick_lang("", request.headers.get("accept-language", "")))
+        return JSONResponse(status_code=403, content={"detail": i18n.tr("Request refused: it came from another site.")})
     if not uses_library:
         i18n.LANG.set(i18n.pick_lang("", request.headers.get("accept-language", "")))
         return await call_next(request)
@@ -1506,11 +1529,15 @@ def desktop_edit_dismiss(token: str, request: Request):
 
 @app.get("/media/{rel_path:path}")
 def media(rel_path: str, download: bool = False):
-    if rel_path.split("/")[0] in (".mdop", ".trash", ".lixeira"):
+    if rel_path.split("/")[0].lower() in HIDDEN_DIRS:
         raise HTTPException(404)
     try:
         path = lib.library_path(rel_path)
     except LibraryError:
+        raise HTTPException(404)
+    # checked again after resolving: "songs/../.mdop/mdop.db" must not reach the database or the trash
+    top = path.relative_to(config.LIBRARY_DIR).parts[:1]
+    if top and top[0].lower() in HIDDEN_DIRS:
         raise HTTPException(404)
     if not path.is_file():
         raise HTTPException(404)

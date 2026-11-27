@@ -25,6 +25,7 @@ def tr(text: str, **params) -> str:
 PT = {
     # library and songs
     "Invalid path.": "Caminho inválido.",
+    "Request refused: it came from another site.": "Pedido recusado: ele veio de outro site.",
     "Song not found.": "Música não encontrada.",
     "Version not found.": "Versão não encontrada.",
     "A song needs at least one version.": "A música precisa ter pelo menos uma versão.",
